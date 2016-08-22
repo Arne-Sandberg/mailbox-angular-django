@@ -21,6 +21,15 @@ class NGUser(models.Model):
     def __str__(self):
         return '%s %s' % (self.first_name, self.last_name,)
 
+    @classmethod
+    def get_user_by_id(cls, uid):
+        if not uid:
+            return None
+        try:
+            return NGUser.objects.get(id=uid)
+        except NGUser.DoesNotExist:
+            return None
+
 
 class NGMessage(models.Model):
     sender = models.ForeignKey(NGUser, related_name='sender')
