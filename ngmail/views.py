@@ -43,7 +43,7 @@ def parse_id(item_id):
 @csrf_exempt
 def messages(request):
     me = NGUser.objects.get(first_name='Леонид')
-    messages = [message_to_dict(m) for m in NGMessage.objects.filter(recipient=me).all()]
+    messages = [message_to_dict(m) for m in NGMessage.objects.filter(recipient=me).filter(sender__deleted=False).all()]
     return HttpResponse(
         json.dumps(messages),
         mimetype="application/json"
@@ -52,7 +52,7 @@ def messages(request):
 
 @csrf_exempt
 def users(request):
-    users = [user_to_dict(u) for u in NGUser.objects.all()]
+    users = [user_to_dict(u) for u in NGUser.objects.filter(deleted=False)]
     return HttpResponse(
         json.dumps(users),
         mimetype="application/json"
@@ -79,6 +79,22 @@ def edit_user(request, uid):
     user.avatar_url = user_data['avatarUrl']
     user.email = user_data['email']
     user.address = user_data['address']
+    user.save()
+    return HttpResponse(
+        json.dumps(user_to_dict(user)),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def delete_contact(request, uid):
+    user_id = parse_id(uid)
+    if user_id is None:
+        return HttpResponseBadRequest()
+    user = NGUser.get_user_by_id(uid)
+    if user is None:
+        return HttpResponseBadRequest()
+    user.deleted = True
     user.save()
     return HttpResponse(
         json.dumps(user_to_dict(user)),

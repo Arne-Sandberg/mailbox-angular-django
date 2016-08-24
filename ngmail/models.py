@@ -17,6 +17,7 @@ class NGUser(models.Model):
     address = models.CharField(max_length=100)
     email = models.EmailField()
     avatar_url = models.CharField(max_length=200)
+    deleted = models.BooleanField(default=False)
 
     def __str__(self):
         return '%s %s' % (self.first_name, self.last_name,)
