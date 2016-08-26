@@ -9,6 +9,13 @@ def shorten_string(s, slen):
         return s
 
 
+class NGMessageFolder(models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.name
+
+
 class NGUser(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
@@ -37,6 +44,7 @@ class NGMessage(models.Model):
     recipient = models.ForeignKey(NGUser, related_name='recipient')
     date_and_time = models.DateTimeField(default=timezone.now)
     text = models.TextField(null=True)
+    folder = models.ForeignKey(NGMessageFolder)
 
     MESSAGE_NAME_DISPLAY_LENGTH = 70
 

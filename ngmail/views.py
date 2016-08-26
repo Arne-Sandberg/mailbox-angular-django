@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest
 import json
-from ngmail.models import NGUser, NGMessage
+from ngmail.models import NGUser, NGMessage, NGMessageFolder
 from django.views.decorators.csrf import csrf_exempt
 import time
 
@@ -14,7 +14,8 @@ def message_to_dict(msg):
         'sender': msg.sender.id,
         'recipient': msg.recipient.id,
         'text': msg.text,
-        'sent': str(msg.date_and_time)
+        'sent': str(msg.date_and_time),
+        'folderId': msg.folder.id
     }
 
 
@@ -31,6 +32,13 @@ def user_to_dict(usr):
     }
 
 
+def folder_to_dict(folder):
+    return {
+        'id': folder.id,
+        'name': folder.name
+    }
+
+
 def parse_id(item_id):
     if isinstance(item_id, int) and item_id > 0:
         return item_id
@@ -41,9 +49,10 @@ def parse_id(item_id):
 
 
 @csrf_exempt
-def messages(request):
+def messages(request, folder):
     me = NGUser.objects.get(first_name='Леонид')
-    messages = [message_to_dict(m) for m in NGMessage.objects.filter(recipient=me).filter(sender__deleted=False).all()]
+    qset = NGMessage.objects.filter(folder__name__iexact=folder).filter(recipient=me).filter(sender__deleted=False)
+    messages = [message_to_dict(m) for m in qset.all()]
     return HttpResponse(
         json.dumps(messages),
         mimetype="application/json"
@@ -55,6 +64,15 @@ def users(request):
     users = [user_to_dict(u) for u in NGUser.objects.filter(deleted=False)]
     return HttpResponse(
         json.dumps(users),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def folders(request):
+    folders = [folder_to_dict(f) for f in NGMessageFolder.objects.all()]
+    return HttpResponse(
+        json.dumps(folders),
         mimetype="application/json"
     )
 
