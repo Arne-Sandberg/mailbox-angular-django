@@ -118,3 +118,24 @@ def delete_contact(request, uid):
         json.dumps(user_to_dict(user)),
         mimetype="application/json"
     )
+
+
+@csrf_exempt
+def move_messages(request, folder):
+    folder = NGMessageFolder.get_folder_by_name(folder)
+    if folder is None:
+        return HttpResponseBadRequest()
+    message_ids = request.POST.get('messageIds', None)
+    if message_ids is None:
+        return HttpResponseBadRequest()
+    message_ids_parsed = list(map(parse_id, json.loads(message_ids)))
+    if None in message_ids_parsed:
+        return HttpResponseBadRequest()
+    for mid in message_ids_parsed:
+        msg = NGMessage.get_message_by_id(mid)
+        msg.folder = folder
+        msg.save()
+    return HttpResponse(
+        json.dumps({'status': 'success'}),
+        mimetype="application/json"
+    )

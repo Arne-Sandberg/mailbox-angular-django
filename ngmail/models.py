@@ -15,6 +15,15 @@ class NGMessageFolder(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get_folder_by_name(cls, folder):
+        if not folder:
+            return None
+        try:
+            return NGMessageFolder.objects.get(name__iexact=folder)
+        except NGMessageFolder.DoesNotExist:
+            return None
+
 
 class NGUser(models.Model):
     first_name = models.CharField(max_length=30)
@@ -52,3 +61,12 @@ class NGMessage(models.Model):
         res = '[' + shorten_string(self.sender.__str__(), 30) + ']'
         res += '[' + shorten_string(self.text, self.MESSAGE_NAME_DISPLAY_LENGTH) + ']'
         return res
+
+    @classmethod
+    def get_message_by_id(cls, uid):
+        if not uid:
+            return None
+        try:
+            return NGMessage.objects.get(id=uid)
+        except NGMessage.DoesNotExist:
+            return None
