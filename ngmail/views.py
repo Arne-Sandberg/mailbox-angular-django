@@ -8,7 +8,7 @@ import time
 
 # Create your views here.
 
-def message_to_dict(msg, user):
+def message_to_dict(msg, user=None):
     return {
         'id': msg.id,
         'sender': msg.sender.id,
@@ -16,7 +16,7 @@ def message_to_dict(msg, user):
         'text': msg.text,
         'sent': str(msg.date_and_time),
         'folderId': msg.folder.id,
-        'type': 'sent' if msg.sender.id == user.id else 'received'
+        'type': 'none' if user is None else ('sent' if msg.sender.id == user.id else 'received')
     }
 
 
@@ -56,6 +56,21 @@ def messages(request, folder):
     messages = [message_to_dict(m, me) for m in qset.all()]
     return HttpResponse(
         json.dumps(messages),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def get_message(request, msgid):
+    msgid = parse_id(msgid)
+    if msgid is None:
+        return HttpResponseBadRequest()
+    message = NGMessage.get_message_by_id(msgid)
+    if message is None:
+        return HttpResponseBadRequest()
+    me = NGUser.objects.get(first_name='Леонид')
+    return HttpResponse(
+        json.dumps(message_to_dict(message, me)),
         mimetype="application/json"
     )
 
