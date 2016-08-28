@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models import Q
 
 
 def shorten_string(s, slen):
@@ -70,3 +71,10 @@ class NGMessage(models.Model):
             return NGMessage.objects.get(id=uid)
         except NGMessage.DoesNotExist:
             return None
+
+    @classmethod
+    def filter_messages(cls, folderName, user, show_deleted=False):
+        qs = NGMessage.objects.filter(folder__name__iexact=folderName).filter(Q(recipient=user) | Q(sender=user))
+        if show_deleted:
+            qs = qs.filter(sender__deleted=False)
+        return qs

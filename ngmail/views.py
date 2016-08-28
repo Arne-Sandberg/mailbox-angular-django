@@ -51,7 +51,7 @@ def parse_id(item_id):
 @csrf_exempt
 def messages(request, folder):
     me = NGUser.objects.get(first_name='Леонид')
-    qset = NGMessage.objects.filter(folder__name__iexact=folder).filter(recipient=me).filter(sender__deleted=False)
+    qset = NGMessage.filter_messages(folder, me, False)
     messages = [message_to_dict(m) for m in qset.all()]
     return HttpResponse(
         json.dumps(messages),
@@ -70,7 +70,10 @@ def users(request):
 
 @csrf_exempt
 def folders(request):
+    me = NGUser.objects.get(first_name='Леонид')
     folders = [folder_to_dict(f) for f in NGMessageFolder.objects.all()]
+    for folder in folders:
+        folder['messageCount'] = NGMessage.filter_messages(folder['name'], me, False).count()
     return HttpResponse(
         json.dumps(folders),
         mimetype="application/json"
@@ -135,6 +138,24 @@ def move_messages(request, folder):
         msg = NGMessage.get_message_by_id(mid)
         msg.folder = folder
         msg.save()
+    return HttpResponse(
+        json.dumps({'status': 'success'}),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def send_message(request):
+    me = NGUser.objects.get(first_name='Леонид')
+    message_info = request.POST.get('messageInfo', None)
+    if message_info is None:
+        return HttpResponseBadRequest()
+    parsed_message_info = json.loads(message_info)
+    recipients = [NGUser.get_user_by_id(parse_id(rid)) for rid in parsed_message_info['recipients']]
+    sent_folder = NGMessageFolder.get_folder_by_name('sent')
+    text = parsed_message_info['text']
+    for rec in recipients:
+        NGMessage.objects.create(sender=me, folder=sent_folder, recipient=rec, text=text)
     return HttpResponse(
         json.dumps({'status': 'success'}),
         mimetype="application/json"

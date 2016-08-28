@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     # url(r'^$', 'MailboxAngular.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
 
+    url(r'^messages/send/', 'ngmail.views.send_message'),
     url(r'^messages/([0-9a-zA-Z]+)/move/', 'ngmail.views.move_messages'),
     url(r'^messages/([0-9a-zA-Z]+)/', 'ngmail.views.messages'),
     url(r'^user/([0-9]+)/edit/', 'ngmail.views.edit_user'),
