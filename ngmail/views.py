@@ -8,14 +8,15 @@ import time
 
 # Create your views here.
 
-def message_to_dict(msg):
+def message_to_dict(msg, user):
     return {
         'id': msg.id,
         'sender': msg.sender.id,
         'recipient': msg.recipient.id,
         'text': msg.text,
         'sent': str(msg.date_and_time),
-        'folderId': msg.folder.id
+        'folderId': msg.folder.id,
+        'type': 'sent' if msg.sender.id == user.id else 'received'
     }
 
 
@@ -52,7 +53,7 @@ def parse_id(item_id):
 def messages(request, folder):
     me = NGUser.objects.get(first_name='Леонид')
     qset = NGMessage.filter_messages(folder, me, False)
-    messages = [message_to_dict(m) for m in qset.all()]
+    messages = [message_to_dict(m, me) for m in qset.all()]
     return HttpResponse(
         json.dumps(messages),
         mimetype="application/json"
@@ -151,11 +152,14 @@ def send_message(request):
     if message_info is None:
         return HttpResponseBadRequest()
     parsed_message_info = json.loads(message_info)
+    sender = NGUser.get_user_by_id(parsed_message_info['senderId'])
+    if sender is None:
+        return HttpResponseBadRequest()
     recipients = [NGUser.get_user_by_id(parse_id(rid)) for rid in parsed_message_info['recipients']]
-    sent_folder = NGMessageFolder.get_folder_by_name('sent')
+    sent_folder = NGMessageFolder.get_folder_by_name('sent' if me.id == sender.id else 'inbox')
     text = parsed_message_info['text']
     for rec in recipients:
-        NGMessage.objects.create(sender=me, folder=sent_folder, recipient=rec, text=text)
+        NGMessage.objects.create(sender=sender, folder=sent_folder, recipient=rec, text=text)
     return HttpResponse(
         json.dumps({'status': 'success'}),
         mimetype="application/json"

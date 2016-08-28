@@ -77,4 +77,5 @@ class NGMessage(models.Model):
         qs = NGMessage.objects.filter(folder__name__iexact=folderName).filter(Q(recipient=user) | Q(sender=user))
         if show_deleted:
             qs = qs.filter(sender__deleted=False)
+        qs = qs.order_by('-date_and_time')
         return qs
