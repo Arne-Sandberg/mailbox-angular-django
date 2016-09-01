@@ -4,6 +4,7 @@ import json
 from ngmail.models import NGUser, NGMessage, NGMessageFolder
 from django.views.decorators.csrf import csrf_exempt
 import time
+from datetime import date
 
 
 # Create your views here.
@@ -47,6 +48,10 @@ def parse_id(item_id):
         return parse_id(int(item_id)) if item_id and item_id.isdigit() else None
     else:
         return None
+
+
+def parse_date(datestr):
+    return date.fromtimestamp(time.mktime(time.strptime(datestr, '%Y-%m-%d')))
 
 
 @csrf_exempt
@@ -112,11 +117,33 @@ def edit_user(request, uid):
     user.first_name = user_data['firstName']
     user.last_name = user_data['lastName']
     user.gender = user_data['gender']
-    user.birhdate = time.strptime(user_data['birthDate'], '%Y-%m-%d')
+    user.birthdate = parse_date(user_data['birthDate'])
     user.avatar_url = user_data['avatarUrl']
     user.email = user_data['email']
     user.address = user_data['address']
     user.save()
+    return HttpResponse(
+        json.dumps(user_to_dict(user)),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def add_user(request):
+    user_data = request.POST.get('user', None)
+    if user_data is None:
+        return HttpResponseBadRequest()
+    user_data = json.loads(user_data)
+    # TODO: add server validation
+    user = NGUser.objects.create(
+        first_name=user_data['firstName'],
+        last_name=user_data['lastName'],
+        gender=user_data['gender'],
+        birthdate=parse_date(user_data['birthDate']),
+        avatar_url=user_data['avatarUrl'],
+        email=user_data['email'],
+        address=user_data['address']
+    )
     return HttpResponse(
         json.dumps(user_to_dict(user)),
         mimetype="application/json"
