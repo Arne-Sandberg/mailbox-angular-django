@@ -30,7 +30,8 @@ def user_to_dict(usr):
         'address': usr.address,
         'email': usr.email,
         'avatarUrl': usr.avatar_url,
-        'birthDate': str(usr.birthdate)
+        'birthDate': str(usr.birthdate),
+        'deleted': usr.deleted
     }
 
 
@@ -83,6 +84,29 @@ def get_message(request, msgid):
 @csrf_exempt
 def users(request):
     users = [user_to_dict(u) for u in NGUser.objects.filter(deleted=False)]
+    return HttpResponse(
+        json.dumps(users),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def user(request, uid):
+    uid = parse_id(uid)
+    if uid is None:
+        return HttpResponseBadRequest()
+    user = NGUser.get_user_by_id(uid)
+    if user is None:
+        return HttpResponseBadRequest()
+    return HttpResponse(
+        json.dumps(user_to_dict(user)),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def deleted_users(request):
+    users = [user_to_dict(u) for u in NGUser.objects.filter(deleted=True)]
     return HttpResponse(
         json.dumps(users),
         mimetype="application/json"
@@ -159,6 +183,22 @@ def delete_contact(request, uid):
     if user is None:
         return HttpResponseBadRequest()
     user.deleted = True
+    user.save()
+    return HttpResponse(
+        json.dumps(user_to_dict(user)),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def activate_contact(request, uid):
+    user_id = parse_id(uid)
+    if user_id is None:
+        return HttpResponseBadRequest()
+    user = NGUser.get_user_by_id(uid)
+    if user is None:
+        return HttpResponseBadRequest()
+    user.deleted = False
     user.save()
     return HttpResponse(
         json.dumps(user_to_dict(user)),
