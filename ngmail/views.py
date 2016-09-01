@@ -246,3 +246,32 @@ def send_message(request):
         json.dumps({'status': 'success'}),
         mimetype="application/json"
     )
+
+
+@csrf_exempt
+def create_folder(request, name):
+    folder = NGMessageFolder.get_folder_by_name(name)
+    if folder is not None:
+        return HttpResponseBadRequest()
+    NGMessageFolder.objects.create(name=name)
+    return HttpResponse(
+        json.dumps({'status': 'success'}),
+        mimetype="application/json"
+    )
+
+
+@csrf_exempt
+def delete_folder(request, name):
+    if name.lower() in ['inbox', 'sent', 'trash', 'spam']:
+        return HttpResponseBadRequest()
+    folder = NGMessageFolder.get_folder_by_name(name)
+    if folder is None:
+        return HttpResponseBadRequest()
+    fmessages = NGMessage.objects.filter(folder__name=name).count()
+    if fmessages > 0:
+        return HttpResponseBadRequest()
+    folder.delete()
+    return HttpResponse(
+        json.dumps({'status': 'success'}),
+        mimetype="application/json"
+    )
